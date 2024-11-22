@@ -60,6 +60,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [searchQuery, setSearch] = useState("");
   const [isOpen2, setIsOpen2] = useState(true);
+  const [selectedMovie, setSelectedMovie] = useState(null);
 
   useEffect(
     function () {
@@ -105,9 +106,14 @@ export default function App() {
       </Nav>
       <Main>
         <MovieBox>
-          {/* {isLoading ? <Loader /> : <MovieList movies={movies} />} */}
           {isLoading && <Loader />}
-          {!isLoading && !error && <MovieList movies={movies} />}
+          {!isLoading && !error && (
+            <MovieList
+              movies={movies}
+              selectedMovie={selectedMovie}
+              onSelectedMovie={setSelectedMovie}
+            />
+          )}
           {error && <ErrorMsg message={error} />}
         </MovieBox>
 
@@ -120,13 +126,48 @@ export default function App() {
           </button>
           {isOpen2 && (
             <>
-              <Summary watched={watched} />
-              <WatchedList watched={watched} />
+              {selectedMovie ? (
+                <SelectMovie movieID={selectedMovie} />
+              ) : (
+                <>
+                  <Summary watched={watched} />
+                  <WatchedList watched={watched} />
+                </>
+              )}
             </>
           )}
         </MovieBox>
       </Main>
     </>
+  );
+}
+
+function SelectMovie({ movieID }) {
+  const [movie, setMovie] = useState({});
+
+  useEffect(
+    function () {
+      async function getMovie() {
+        const res = await fetch(
+          `https://www.omdbapi.com/?apikey=${API_KEY}&i=${movieID}`
+        );
+
+        const data = await res.json();
+        console.log(data);
+        // setMovie(data);
+      }
+
+      getMovie();
+    },
+    [movieID]
+  );
+
+  // console.log(movie);
+  return (
+    <div>
+      <p>This is a movie component</p>
+      <p>This is the ID: ${movie.imdbID}</p>
+    </div>
   );
 }
 
@@ -205,11 +246,15 @@ function MovieBox({ children }) {
   );
 }
 
-function MovieList({ movies }) {
+function MovieList({ movies, selectedMovie, onSelectedMovie }) {
   return (
     <ul className="list">
       {movies?.map((movie) => (
-        <Movie key={movie.imdbID} movie={movie}>
+        <Movie
+          key={movie.imdbID}
+          movie={movie}
+          onSelectedMovie={onSelectedMovie}
+        >
           <span>🗓</span>
           <span>{movie.Year}</span>
         </Movie>
@@ -218,9 +263,9 @@ function MovieList({ movies }) {
   );
 }
 
-function Movie({ movie, children }) {
+function Movie({ movie, children, onSelectedMovie }) {
   return (
-    <li>
+    <li onClick={() => onSelectedMovie(movie.imdbID)}>
       <img src={movie.Poster} alt={`${movie.Title} poster`} />
       <h3>{movie.Title}</h3>
       <div>
